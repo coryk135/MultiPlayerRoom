@@ -10,6 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/Engine.h"
+#include "MultiPlayerRoomProjectile.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiPlayerRoomCharacter
@@ -51,6 +52,12 @@ AMultiPlayerRoomCharacter::AMultiPlayerRoomCharacter()
 	//Initialize the player's Health
 	MaxHealth = 100.0f;
 	CurrentHealth = MaxHealth;
+
+	//Initialize projectile class
+	ProjectileClass = AMultiPlayerRoomProjectile::StaticClass();
+	//Initialize fire rate
+	FireRate = 0.25f;
+	bIsFiringWeapon = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -113,6 +120,34 @@ float AMultiPlayerRoomCharacter::TakeDamage(float DamageTaken, struct FDamageEve
 	return damageApplied;
 }
 
+void AMultiPlayerRoomCharacter::StartFire()
+{
+	if (!bIsFiringWeapon)
+	{
+		bIsFiringWeapon = true;
+		UWorld* World = GetWorld();
+		World->GetTimerManager().SetTimer(FiringTimer, this, &AMultiPlayerRoomCharacter::StopFire, FireRate, false);
+		HandleFire();
+	}
+}
+
+void AMultiPlayerRoomCharacter::StopFire()
+{
+	bIsFiringWeapon = false;
+}
+
+void AMultiPlayerRoomCharacter::HandleFire_Implementation()
+{
+	FVector spawnLocation = GetActorLocation() + (GetControlRotation().Vector() * 100.0f) + (GetActorUpVector() * 50.0f);
+	FRotator spawnRotation = GetControlRotation();
+
+	FActorSpawnParameters spawnParameters;
+	spawnParameters.Instigator = GetInstigator();
+	spawnParameters.Owner = this;
+
+	AMultiPlayerRoomProjectile* spawnedProjectile = GetWorld()->SpawnActor<AMultiPlayerRoomProjectile>(spawnLocation, spawnRotation, spawnParameters);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -140,6 +175,9 @@ void AMultiPlayerRoomCharacter::SetupPlayerInputComponent(class UInputComponent*
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiPlayerRoomCharacter::OnResetVR);
+
+	// Handle firing projectiles
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMultiPlayerRoomCharacter::StartFire);
 }
 
 
