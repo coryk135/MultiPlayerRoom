@@ -61,7 +61,7 @@ void AMultiPlayerRoomCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProp
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	//Replicate current health.
-	DOREPLIFETIME(AThirdPersonMPCharacter, CurrentHealth);
+	DOREPLIFETIME(AMultiPlayerRoomCharacter, CurrentHealth);
 }
 
 void AMultiPlayerRoomCharacter::OnHealthUpdate()
